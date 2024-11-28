@@ -9,7 +9,7 @@ interface BirdProps {
 export const Bird: React.FC<BirdProps> = ({ position, velocity }) => {
   return (
     <div
-      className="absolute w-8 h-8 bg-yellow-400 rounded-full transition-transform"
+      className="absolute w-7 h-7 bg-yellow-400 rounded-full transition-transform"
       style={{
         top: position,
         left: BIRD_X,

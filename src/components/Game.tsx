@@ -15,6 +15,7 @@ import {
   PIPE_SPEED,
   PIPE_WIDTH,
   PIPE_CONFIG,
+  HITBOX_OFFSET,
 } from '../constants/gameConstants';
 
 export default function Game() {
@@ -35,15 +36,21 @@ export default function Game() {
   });
 
   const checkCollision = (birdPos: number, pipes: Pipe[]): boolean => {
+    // Adjusted hitbox with offset
+    const birdHitboxX = BIRD_X + HITBOX_OFFSET.X;
+    const birdHitboxY = birdPos + HITBOX_OFFSET.Y;
+    const birdHitboxWidth = BIRD_WIDTH - (HITBOX_OFFSET.X * 2);
+    const birdHitboxHeight = BIRD_HEIGHT - (HITBOX_OFFSET.Y * 2);
+
     return pipes.some(pipe => {
       const pipeLeft = pipe.x;
       const pipeRight = pipe.x + PIPE_WIDTH;
 
-      if (BIRD_X + BIRD_WIDTH > pipeLeft && BIRD_X < pipeRight) {
+      if (birdHitboxX + birdHitboxWidth > pipeLeft && birdHitboxX < pipeRight) {
         const topPipeBottom = pipe.height;
         const bottomPipeTop = pipe.height + PIPE_GAP;
         
-        return birdPos < topPipeBottom || birdPos + BIRD_HEIGHT > bottomPipeTop;
+        return birdHitboxY < topPipeBottom || birdHitboxY + birdHitboxHeight > bottomPipeTop;
       }
       return false;
     });
