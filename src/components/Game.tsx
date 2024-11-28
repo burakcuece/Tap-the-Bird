@@ -36,7 +36,6 @@ export default function Game() {
   });
 
   const checkCollision = (birdPos: number, pipes: Pipe[]): boolean => {
-    // Adjusted hitbox with offset
     const birdHitboxX = BIRD_X + HITBOX_OFFSET.X;
     const birdHitboxY = birdPos + HITBOX_OFFSET.Y;
     const birdHitboxWidth = BIRD_WIDTH - (HITBOX_OFFSET.X * 2);
@@ -129,7 +128,7 @@ export default function Game() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center">
+    <div className="flex items-center justify-center pt-8 pb-4">
       <div 
         className="relative w-[400px] h-[500px] bg-blue-300 rounded-lg shadow-2xl overflow-hidden cursor-pointer" 
         onClick={handleClick}
