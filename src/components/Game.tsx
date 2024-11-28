@@ -16,12 +16,14 @@ import {
   PIPE_WIDTH,
   PIPE_CONFIG,
   HITBOX_OFFSET,
+  INITIAL_BIRD_POSITION,
+  INITIAL_BIRD_VELOCITY,
 } from '../constants/gameConstants';
 
 export default function Game() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [birdPosition, setBirdPosition] = useState(250);
-  const [birdVelocity, setBirdVelocity] = useState(0);
+  const [birdPosition, setBirdPosition] = useState(INITIAL_BIRD_POSITION);
+  const [birdVelocity, setBirdVelocity] = useState(INITIAL_BIRD_VELOCITY);
   const [pipes, setPipes] = useState<Pipe[]>([]);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(getStoredHighScore());
@@ -65,8 +67,11 @@ export default function Game() {
     () => {
       if (gameOver) return;
 
-      const newBirdVelocity = birdVelocity + GRAVITY;
+      // Apply gentler gravity at the start
+      const gravityMultiplier = !gameStarted ? 0.5 : 1;
+      const newBirdVelocity = birdVelocity + (GRAVITY * gravityMultiplier);
       const newBirdPosition = birdPosition + newBirdVelocity;
+      
       setBirdVelocity(newBirdVelocity);
       setBirdPosition(newBirdPosition);
 
@@ -112,8 +117,8 @@ export default function Game() {
   const resetGame = () => {
     setGameStarted(true);
     setGameOver(false);
-    setBirdPosition(250);
-    setBirdVelocity(0);
+    setBirdPosition(INITIAL_BIRD_POSITION);
+    setBirdVelocity(INITIAL_BIRD_VELOCITY);
     setPipes([generatePipe(PIPE_CONFIG.SPAWN_X)]);
     setScore(0);
     setIsNewHighScore(false);
