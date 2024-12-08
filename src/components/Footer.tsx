@@ -14,7 +14,7 @@ export const Footer: React.FC = () => {
 
                 <div className="flex justify-center space-x-6">
                     <a
-                        href="https://github.com/burakcuece/Tap-the-Bird"
+                        href=""
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-white hover:text-blue-200 transition-colors"
@@ -65,15 +65,15 @@ export const Footer: React.FC = () => {
 
                                 <section>
                                     <h3 className="font-semibold mb-2">Kontakt</h3>
-                                    <p>Telefon: +49 (0) 163 6753600</p>
+                                    <p>Telefon: </p>
                                     <p>E-Mail: info@tapthebird.com</p>
                                 </section>
 
                                 <section>
                                     <h3 className="font-semibold mb-2">Verantwortlich für den Inhalt</h3>
-                                    <p>Burak Cüce</p>
-                                    <p>Professor-Knipping-Str. 28 </p>
-                                    <p>45661 Recklinghausen</p>
+                                    <p></p>
+                                    <p> </p>
+                                    <p></p>
                                 </section>
 
                                 <section>
