@@ -57,10 +57,10 @@ export const Footer: React.FC = () => {
                             <div className="space-y-4 text-gray-700">
                                 <section>
                                     <h3 className="font-semibold mb-2">Angaben gemäß § 5 TMG</h3>
-                                    <p>Burak Cüce</p>
-                                    <p>Professor-Knipping-Str. 28 </p>
-                                    <p>45661 Recklinghausen</p>
-                                    <p>Deutschland</p>
+                                    <p></p>
+                                    <p> </p>
+                                    <p></p>
+                                    <p></p>
                                 </section>
 
                                 <section>
