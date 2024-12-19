@@ -57,23 +57,22 @@ export const Footer: React.FC = () => {
                             <div className="space-y-4 text-gray-700">
                                 <section>
                                     <h3 className="font-semibold mb-2">Angaben gemäß § 5 TMG</h3>
-                                    <p></p>
-                                    <p> </p>
-                                    <p></p>
-                                    <p></p>
+                                    <p>Burak Cüce</p>
+                                    <p>Professor-Knipping-Str. 28</p>
+                                    <p>45661 Recklinghausen</p>
                                 </section>
 
                                 <section>
                                     <h3 className="font-semibold mb-2">Kontakt</h3>
-                                    <p>Telefon: </p>
+                                    <p>Telefon: +49 163 6753600</p>
                                     <p>E-Mail: info@tapthebird.com</p>
                                 </section>
 
                                 <section>
                                     <h3 className="font-semibold mb-2">Verantwortlich für den Inhalt</h3>
-                                    <p></p>
-                                    <p> </p>
-                                    <p></p>
+                                    <p>Burak Cüce</p>
+                                    <p>Professor-Knipping-Str. 28</p>
+                                    <p>45661 Recklinghausen</p>
                                 </section>
 
                                 <section>
