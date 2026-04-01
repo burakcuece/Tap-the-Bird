@@ -18,6 +18,7 @@ import {
   HITBOX_OFFSET,
   INITIAL_BIRD_POSITION,
   INITIAL_BIRD_VELOCITY,
+  MAX_VELOCITY,
 } from '../constants/gameConstants';
 
 export default function Game() {
@@ -69,7 +70,7 @@ export default function Game() {
 
       // Apply gentler gravity at the start
       const gravityMultiplier = !gameStarted ? 0.5 : 1;
-      const newBirdVelocity = birdVelocity + (GRAVITY * gravityMultiplier);
+      const newBirdVelocity = Math.min(birdVelocity + (GRAVITY * gravityMultiplier), MAX_VELOCITY);
       const newBirdPosition = birdPosition + newBirdVelocity;
       
       setBirdVelocity(newBirdVelocity);
