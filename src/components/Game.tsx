@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useInterval } from '../hooks/useInterval';
+import { useGameSounds } from '../hooks/useGameSounds';
 import { Background } from './Background';
 import { Bird } from './Bird';
 import { Pipe as PipeComponent } from './Pipe';
@@ -34,6 +35,7 @@ export default function Game() {
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [scoreFlash, setScoreFlash] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
+  const { playJump, playScore, playGameOver } = useGameSounds();
   const gameRef = useRef<HTMLDivElement>(null);
 
   const generatePipe = (x: number): Pipe => ({
@@ -89,6 +91,7 @@ export default function Game() {
         if (!pipe.passed && newX + PIPE_WIDTH < BIRD_X) {
           const newScore = score + 1;
           setScore(newScore);
+          playScore();
           setScoreFlash(true);
           setTimeout(() => setScoreFlash(false), 300);
 
@@ -119,6 +122,7 @@ export default function Game() {
         newBirdPosition < 0
       ) {
         setGameOver(true);
+        playGameOver();
       }
     },
     gameStarted && !gameOver ? 16 : null
@@ -139,6 +143,7 @@ export default function Game() {
       resetGame();
     } else {
       setBirdVelocity(JUMP_FORCE);
+      playJump();
     }
   };
 
