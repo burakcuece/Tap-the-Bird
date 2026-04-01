@@ -4,12 +4,9 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
   server: {
-    host: '0.0.0.0', // Listen on all local IPs
+    host: '0.0.0.0', // Listen on all network interfaces
     port: 5173,
-    strictPort: true,
+    strictPort: false, // Allow fallback to another port if 5173 is busy
   },
 });
