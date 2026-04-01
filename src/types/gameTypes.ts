@@ -9,3 +9,15 @@ export interface GameState {
   highScore: number;
   isNewHighScore: boolean;
 }
+
+export interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: string;
+  size: number;
+  type: 'feather' | 'explosion';
+}

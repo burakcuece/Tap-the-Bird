@@ -3,9 +3,10 @@ import { useInterval } from '../hooks/useInterval';
 import { useGameSounds } from '../hooks/useGameSounds';
 import { Background } from './Background';
 import { Bird } from './Bird';
+import { ParticleSystem } from './ParticleSystem';
 import { Pipe as PipeComponent } from './Pipe';
 import { ScoreDisplay } from './ScoreDisplay';
-import { Pipe } from '../types/gameTypes';
+import { Particle, Pipe } from '../types/gameTypes';
 import { getStoredHighScore, setStoredHighScore } from '../utils/storage';
 import {
   BIRD_HEIGHT,
@@ -35,8 +36,41 @@ export default function Game() {
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [scoreFlash, setScoreFlash] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [particles, setParticles] = useState<Particle[]>([]);
   const { playJump, playScore, playGameOver } = useGameSounds();
   const gameRef = useRef<HTMLDivElement>(null);
+  const birdPosRef = useRef(INITIAL_BIRD_POSITION);
+  const particleIdRef = useRef(0);
+
+  const spawnFeathers = (x: number, y: number): Particle[] =>
+    Array.from({ length: 5 }, () => ({
+      id: particleIdRef.current++,
+      x: x + BIRD_WIDTH / 2,
+      y: y + BIRD_HEIGHT / 2,
+      vx: -(Math.random() * 2.5 + 0.5),
+      vy: (Math.random() - 0.5) * 2,
+      life: 1,
+      color: ['#fbbf24', '#f97316', '#ffffff'][Math.floor(Math.random() * 3)],
+      size: Math.random() * 3 + 3,
+      type: 'feather' as const,
+    }));
+
+  const spawnExplosion = (x: number, y: number): Particle[] =>
+    Array.from({ length: 14 }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 3.5 + 1.5;
+      return {
+        id: particleIdRef.current++,
+        x: x + BIRD_WIDTH / 2,
+        y: y + BIRD_HEIGHT / 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        color: ['#fbbf24', '#f97316', '#ef4444', '#ffffff', '#fed7aa'][Math.floor(Math.random() * 5)],
+        size: Math.random() * 5 + 3,
+        type: 'explosion' as const,
+      };
+    });
 
   const generatePipe = (x: number): Pipe => ({
     x,
@@ -81,6 +115,7 @@ export default function Game() {
       
       setBirdVelocity(newBirdVelocity);
       setBirdPosition(newBirdPosition);
+      birdPosRef.current = newBirdPosition;
 
       const currentSpeed = PIPE_SPEED + Math.floor(score / 5) * 0.3;
       setScrollOffset(prev => prev + currentSpeed);
@@ -116,11 +151,18 @@ export default function Game() {
 
       setPipes(newPipes);
 
+      setParticles(prev =>
+        prev
+          .map(p => ({ ...p, x: p.x + p.vx, y: p.y + p.vy, vy: p.vy + 0.12, life: p.life - 0.035 }))
+          .filter(p => p.life > 0)
+      );
+
       if (
         checkCollision(newBirdPosition, newPipes) ||
         newBirdPosition > 500 - GROUND_HEIGHT - BIRD_HEIGHT ||
         newBirdPosition < 0
       ) {
+        setParticles(prev => [...prev, ...spawnExplosion(BIRD_X, newBirdPosition)]);
         setGameOver(true);
         playGameOver();
       }
@@ -136,6 +178,7 @@ export default function Game() {
     setPipes([generatePipe(PIPE_CONFIG.SPAWN_X)]);
     setScore(0);
     setIsNewHighScore(false);
+    setParticles([]);
   };
 
   const handleClick = () => {
@@ -144,6 +187,7 @@ export default function Game() {
     } else {
       setBirdVelocity(JUMP_FORCE);
       playJump();
+      setParticles(prev => [...prev, ...spawnFeathers(BIRD_X, birdPosRef.current)]);
     }
   };
 
@@ -167,6 +211,7 @@ export default function Game() {
       >
         <Background scrollOffset={scrollOffset} />
         <Bird position={birdPosition} velocity={birdVelocity} />
+        <ParticleSystem particles={particles} />
         
         {pipes.map((pipe, index) => (
           <PipeComponent key={index} x={pipe.x} height={pipe.height} />

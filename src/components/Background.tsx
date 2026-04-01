@@ -15,8 +15,8 @@ const CLOUDS = [
 ];
 
 const CLOUD_LOOP = 900;
-const GRASS_TILE = 36;
-const DIRT_TILE = 48;
+const GRASS_TILE = 40;
+const DIRT_TILE = 60;
 
 export const Background: React.FC<BackgroundProps> = ({ scrollOffset }) => {
   const cloudOffset = scrollOffset * 0.4;
@@ -53,23 +53,64 @@ export const Background: React.FC<BackgroundProps> = ({ scrollOffset }) => {
 
       {/* Scrolling ground */}
       <div className="absolute bottom-0 left-0 right-0" style={{ height: GROUND_HEIGHT }}>
-        {/* Grass strip */}
-        <div
-          className="absolute top-0 left-0 right-0"
-          style={{
-            height: 9,
-            backgroundImage: 'repeating-linear-gradient(90deg, #65b945 0px, #65b945 18px, #52a832 18px, #52a832 36px)',
-            backgroundPositionX: `${-(scrollOffset % GRASS_TILE)}px`,
-          }}
-        />
-        {/* Dirt strip */}
+
+        {/* Dirt body */}
         <div
           className="absolute left-0 right-0 bottom-0"
           style={{
-            top: 9,
-            backgroundImage: 'repeating-linear-gradient(90deg, #c8925a 0px, #c8925a 24px, #b5804a 24px, #b5804a 48px)',
+            top: 18,
+            backgroundImage: 'repeating-linear-gradient(90deg, #e8c98a 0px, #e8c98a 30px, #dbb870 30px, #dbb870 60px)',
             backgroundPositionX: `${-(scrollOffset % DIRT_TILE)}px`,
           }}
+        />
+
+        {/* Dirt depth lines for 3D feel */}
+        <div
+          className="absolute left-0 right-0"
+          style={{
+            top: 30,
+            height: 4,
+            backgroundImage: 'repeating-linear-gradient(90deg, #c9a45a 0px, #c9a45a 30px, #ba9348 30px, #ba9348 60px)',
+            backgroundPositionX: `${-(scrollOffset % DIRT_TILE)}px`,
+            opacity: 0.5,
+          }}
+        />
+        <div
+          className="absolute left-0 right-0"
+          style={{
+            top: 50,
+            height: 3,
+            backgroundImage: 'repeating-linear-gradient(90deg, #c9a45a 0px, #c9a45a 30px, #ba9348 30px, #ba9348 60px)',
+            backgroundPositionX: `${-(scrollOffset % DIRT_TILE + 15)}px`,
+            opacity: 0.35,
+          }}
+        />
+
+        {/* Grass cap */}
+        <div
+          className="absolute top-0 left-0 right-0"
+          style={{
+            height: 20,
+            backgroundImage: 'repeating-linear-gradient(90deg, #72c442 0px, #72c442 20px, #5fb030 20px, #5fb030 40px)',
+            backgroundPositionX: `${-(scrollOffset % GRASS_TILE)}px`,
+          }}
+        />
+
+        {/* Grass highlight (top edge shimmer) */}
+        <div
+          className="absolute top-0 left-0 right-0"
+          style={{
+            height: 5,
+            backgroundImage: 'repeating-linear-gradient(90deg, #8ed45a 0px, #8ed45a 20px, #72c442 20px, #72c442 40px)',
+            backgroundPositionX: `${-(scrollOffset % GRASS_TILE)}px`,
+            opacity: 0.7,
+          }}
+        />
+
+        {/* Grass→dirt shadow line */}
+        <div
+          className="absolute left-0 right-0"
+          style={{ top: 19, height: 3, backgroundColor: '#3d7a1a', opacity: 0.4 }}
         />
       </div>
     </>
