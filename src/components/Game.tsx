@@ -132,6 +132,17 @@ export default function Game() {
     }
   };
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        handleClick();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [gameStarted, gameOver]);
+
   return (
     <div className="flex items-center justify-center pt-8 pb-4">
       <div 
