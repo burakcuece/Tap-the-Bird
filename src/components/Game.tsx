@@ -5,9 +5,10 @@ import { Background } from './Background';
 import { Bird } from './Bird';
 import { ParticleSystem } from './ParticleSystem';
 import { Pipe as PipeComponent } from './Pipe';
+import { Coin } from './Coin';
 import { ScoreDisplay } from './ScoreDisplay';
-import { Particle, Pipe } from '../types/gameTypes';
-import { getLeaderboard, addLeaderboardEntry, getSelectedSkinId, setSelectedSkinId } from '../utils/storage';
+import { Particle, Pipe, PopupText } from '../types/gameTypes';
+import { getLeaderboard, addLeaderboardEntry, getSelectedSkinId, setSelectedSkinId, addCoins } from '../utils/storage';
 import { BIRD_SKINS } from '../constants/skinConstants';
 import {
   BIRD_HEIGHT,
@@ -40,7 +41,14 @@ export default function Game() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [invincibleFrames, setInvincibleFrames] = useState(0);
   const [selectedSkinId, setSelectedSkinIdState] = useState(getSelectedSkinId());
-  const { playJump, playScore, playGameOver } = useGameSounds();
+  
+  // Economy & Polish states
+  const [coinsGathered, setCoinsGathered] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [popups, setPopups] = useState<PopupText[]>([]);
+  const [screenShake, setScreenShake] = useState(false);
+  
+  const { playJump, playScore, playGameOver, playCoin, playPerfect } = useGameSounds();
   const gameRef = useRef<HTMLDivElement>(null);
 
   const activeSkin = BIRD_SKINS.find(s => s.id === selectedSkinId) ?? BIRD_SKINS[0];
@@ -87,6 +95,7 @@ export default function Game() {
     x,
     height: Math.random() * (PIPE_CONFIG.MAX_HEIGHT - PIPE_CONFIG.MIN_HEIGHT) + PIPE_CONFIG.MIN_HEIGHT,
     passed: false,
+    hasCoin: Math.random() > 0.4, // 60% chance to spawn a coin
   });
 
   const checkCollision = (birdPos: number, pipes: Pipe[]): boolean => {
@@ -131,17 +140,46 @@ export default function Game() {
       const currentSpeed = PIPE_SPEED + Math.floor(score / 5) * 0.3;
       setScrollOffset(prev => prev + currentSpeed);
 
+      setPopups(prev => 
+        prev.map(p => ({ ...p, y: p.y - 1, life: p.life - 1 })).filter(p => p.life > 0)
+      );
+
+      const addPopup = (text: string, color: string, x: number, y: number) => {
+        setPopups(prev => [...prev, { id: particleIdRef.current++, text, color, x, y, life: 60 }]);
+      };
+
       const newPipes = pipes.map(pipe => {
         const newX = pipe.x - currentSpeed;
         
         if (!pipe.passed && newX + PIPE_WIDTH < BIRD_X) {
-          const newScore = score + 1;
+          let extraPoints = 0;
+          
+          // Check for Perfect Hit / Coin
+          const gapCenter = pipe.height + PIPE_GAP / 2;
+          const birdCenter = newBirdPosition + BIRD_HEIGHT / 2;
+          const dist = Math.abs(gapCenter - birdCenter);
+          
+          if (dist < 35) { // Perfect Hit!
+            extraPoints = 1;
+            setCombo(c => c + 1);
+            addPopup('Perfect!', '#c084fc', BIRD_X, newBirdPosition - 20);
+            playPerfect();
+          } else {
+            setCombo(0);
+            playScore();
+          }
+
+          if (pipe.hasCoin && dist < 60) {
+             setCoinsGathered(c => c + 1);
+             addPopup('+1', '#fbbf24', BIRD_X + 20, newBirdPosition);
+             playCoin();
+          }
+
+          const newScore = score + 1 + extraPoints;
           setScore(newScore);
-          playScore();
           setScoreFlash(true);
           setTimeout(() => setScoreFlash(false), 300);
 
-          
           return { ...pipe, x: newX, passed: true };
         }
         
@@ -176,6 +214,11 @@ export default function Game() {
         setParticles(prev => [...prev, ...spawnExplosion(BIRD_X, newBirdPosition)]);
         if (score > (leaderboard[0] ?? 0)) setIsNewHighScore(true);
         setLeaderboard(addLeaderboardEntry(score));
+        if (coinsGathered > 0) addCoins(coinsGathered);
+        
+        setScreenShake(true);
+        setTimeout(() => setScreenShake(false), 400);
+
         setGameOver(true);
         playGameOver();
       }
@@ -190,6 +233,9 @@ export default function Game() {
     setBirdVelocity(INITIAL_BIRD_VELOCITY);
     setPipes([generatePipe(PIPE_CONFIG.SPAWN_X)]);
     setScore(0);
+    setCoinsGathered(0);
+    setCombo(0);
+    setPopups([]);
     setIsNewHighScore(false);
     setParticles([]);
     setInvincibleFrames(90);
@@ -219,7 +265,7 @@ export default function Game() {
   return (
     <div className="flex items-center justify-center pt-8 pb-4">
       <div 
-        className="relative w-[400px] h-[500px] rounded-lg shadow-2xl overflow-hidden cursor-pointer"
+        className={`relative w-[400px] h-[500px] rounded-lg shadow-2xl overflow-hidden cursor-pointer ${screenShake ? 'animate-shake' : ''}`}
         onClick={handleClick}
         ref={gameRef}
       >
@@ -228,8 +274,29 @@ export default function Game() {
         <ParticleSystem particles={particles} />
         
         {pipes.map((pipe, index) => (
-          <PipeComponent key={index} x={pipe.x} height={pipe.height} />
+          <React.Fragment key={index}>
+            <PipeComponent x={pipe.x} height={pipe.height} />
+            {pipe.hasCoin && !pipe.passed && (
+              <Coin x={pipe.x + PIPE_WIDTH / 2 - 12} y={pipe.height + PIPE_GAP / 2 - 12} />
+            )}
+          </React.Fragment>
         ))}
+
+        {popups.map(p => (
+          <div
+            key={p.id}
+            className="absolute font-bold text-lg pointer-events-none transition-all duration-75 shadow-text"
+            style={{ left: p.x, top: p.y, color: p.color, opacity: p.life / 60 }}
+          >
+            {p.text}
+          </div>
+        ))}
+
+        {combo >= 2 && !gameOver && (
+          <div className="absolute top-16 left-0 right-0 text-center pointer-events-none">
+             <span className="text-xl font-bold text-orange-400 animate-pulse shadow-text">Combo x{combo}</span>
+          </div>
+        )}
 
         <ScoreDisplay
           score={score}
@@ -240,6 +307,8 @@ export default function Game() {
           scoreFlash={scoreFlash}
           selectedSkinId={selectedSkinId}
           onSelectSkin={handleSelectSkin}
+          coinsGathered={coinsGathered}
+          combo={combo}
         />
       </div>
     </div>

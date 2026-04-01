@@ -5,3 +5,13 @@
 .shadow-text {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
+
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-8px, 0); }
+  20%, 40%, 60%, 80% { transform: translate(8px, 0); }
+}
+
+.animate-shake {
+  animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+}

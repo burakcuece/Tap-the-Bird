@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '../types/gameTypes';
 import { BIRD_SKINS } from '../constants/skinConstants';
+import { getUnlockedSkins, unlockSkin, getCoins, subtractCoins } from '../utils/storage';
+import { useGameSounds } from '../hooks/useGameSounds';
 
 interface ScoreDisplayProps extends GameState {
   gameOver: boolean;
@@ -8,6 +10,8 @@ interface ScoreDisplayProps extends GameState {
   scoreFlash: boolean;
   selectedSkinId: string;
   onSelectSkin: (id: string) => void;
+  coinsGathered: number;
+  combo: number;
 }
 
 const MEDALS = [
@@ -62,17 +66,46 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   scoreFlash,
   selectedSkinId,
   onSelectSkin,
+  coinsGathered,
 }) => {
-  const bestScore = leaderboard[0] ?? 0;
+  const [unlockedSkins, setUnlockedSkins] = useState<string[]>([]);
+  const [totalCoins, setTotalCoins] = useState(0);
+  const { playBuy } = useGameSounds();
+
+  useEffect(() => {
+    if (!gameStarted || gameOver) {
+      setUnlockedSkins(getUnlockedSkins());
+      setTotalCoins(getCoins());
+    }
+  }, [gameStarted, gameOver]);
+
+  const handleSkinClick = (skinId: string, price: number) => {
+    if (unlockedSkins.includes(skinId)) {
+      onSelectSkin(skinId);
+    } else {
+      if (subtractCoins(price)) {
+        unlockSkin(skinId);
+        setUnlockedSkins(getUnlockedSkins());
+        setTotalCoins(getCoins());
+        onSelectSkin(skinId);
+        playBuy();
+      }
+    }
+  };
 
   return (
     <>
-      <div className="absolute top-4 left-0 right-0 text-center">
-        <div
-          className="text-4xl font-bold text-white shadow-text transition-transform duration-150"
-          style={{ transform: scoreFlash ? 'scale(1.4)' : 'scale(1)' }}
-        >{score}</div>
-        <div className="text-sm text-white shadow-text">Best: {bestScore}</div>
+      <div className="absolute top-4 left-0 right-0 px-4 flex justify-between items-start pointer-events-none">
+        <div className="text-center w-full absolute left-0 right-0 top-0">
+          <div
+            className="text-4xl font-bold text-white shadow-text transition-transform duration-150 inline-block"
+            style={{ transform: scoreFlash ? 'scale(1.4)' : 'scale(1)' }}
+          >{score}</div>
+        </div>
+        <div className="flex bg-black bg-opacity-40 rounded-full px-3 py-1 items-center gap-1.5 ml-auto relative z-10">
+          <div className="w-4 h-4 rounded-full bg-yellow-400 border border-yellow-600" />
+          <span className="text-white font-bold text-sm">{totalCoins}</span>
+        </div>
       </div>
 
       {(!gameStarted || gameOver) && (
@@ -85,7 +118,16 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
             {gameOver && (
               <>
                 <Medal score={score} />
-                <p className="text-lg text-white mb-2">Score: {score}</p>
+                <div className="flex gap-4 justify-center mb-4">
+                  <div className="bg-black bg-opacity-40 rounded-xl px-4 py-2">
+                    <p className="text-xs text-white opacity-70">SCORE</p>
+                    <p className="text-xl font-bold text-white">{score}</p>
+                  </div>
+                  <div className="bg-black bg-opacity-40 rounded-xl px-4 py-2">
+                    <p className="text-xs text-white opacity-70">COINS</p>
+                    <p className="text-xl font-bold text-yellow-400">+{coinsGathered}</p>
+                  </div>
+                </div>
 
                 {leaderboard.length > 0 && (
                   <div className="mx-auto mb-3 w-36">
@@ -118,31 +160,42 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
             {!gameOver && (
               <div className="mt-3 mb-2">
                 <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">
-                  Bird auswählen
+                  Skin Shop
                 </p>
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-3 justify-center px-4 overflow-x-auto">
                   {BIRD_SKINS.map(skin => {
-                    const unlocked = bestScore >= skin.unlock;
+                    const unlocked = unlockedSkins.includes(skin.id);
                     const selected = selectedSkinId === skin.id;
+                    const canAfford = totalCoins >= skin.price;
+                    
                     return (
                       <div
                         key={skin.id}
-                        className="flex flex-col items-center gap-0.5 cursor-pointer"
-                        onClick={e => { e.stopPropagation(); if (unlocked) onSelectSkin(skin.id); }}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors z-10 cursor-pointer ${
+                          selected ? 'bg-white bg-opacity-20' : 'bg-black bg-opacity-40 hover:bg-opacity-60'
+                        }`}
+                        onClick={e => { e.stopPropagation(); handleSkinClick(skin.id, skin.price); }}
                       >
                         <div
-                          className="w-8 h-8 rounded-full transition-transform"
+                          className="w-10 h-10 rounded-full transition-transform mx-auto"
                           style={{
-                            backgroundColor: unlocked ? skin.body : '#6b7280',
+                            backgroundColor: skin.body,
                             boxShadow: selected ? `0 0 0 2px white, 0 0 0 4px ${skin.body}` : undefined,
-                            transform: selected ? 'scale(1.2)' : 'scale(1)',
-                            filter: unlocked ? undefined : 'grayscale(1)',
-                            opacity: unlocked ? 1 : 0.5,
+                            transform: selected ? 'scale(1.1)' : 'scale(1)',
+                            filter: !unlocked ? 'brightness(0.4)' : undefined,
                           }}
                         />
-                        <span className="text-white opacity-60" style={{ fontSize: 8 }}>
-                          {unlocked ? skin.name : `${skin.unlock}+`}
-                        </span>
+                        <div className="text-center mt-1">
+                          <p className="text-white text-xs font-bold w-16 truncate">{skin.name}</p>
+                          {unlocked ? (
+                            <p className="text-[10px] text-green-400">Unlocked</p>
+                          ) : (
+                            <p className={`text-[10px] font-bold flex items-center justify-center gap-1 ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>
+                              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+                              {skin.price}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
