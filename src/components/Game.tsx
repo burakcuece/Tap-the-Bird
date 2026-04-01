@@ -7,7 +7,7 @@ import { ParticleSystem } from './ParticleSystem';
 import { Pipe as PipeComponent } from './Pipe';
 import { ScoreDisplay } from './ScoreDisplay';
 import { Particle, Pipe } from '../types/gameTypes';
-import { getStoredHighScore, setStoredHighScore } from '../utils/storage';
+import { getLeaderboard, addLeaderboardEntry } from '../utils/storage';
 import {
   BIRD_HEIGHT,
   BIRD_WIDTH,
@@ -31,7 +31,7 @@ export default function Game() {
   const [birdVelocity, setBirdVelocity] = useState(INITIAL_BIRD_VELOCITY);
   const [pipes, setPipes] = useState<Pipe[]>([]);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(getStoredHighScore());
+  const [leaderboard, setLeaderboard] = useState<number[]>(getLeaderboard());
   const [gameOver, setGameOver] = useState(false);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [scoreFlash, setScoreFlash] = useState(false);
@@ -130,11 +130,6 @@ export default function Game() {
           setScoreFlash(true);
           setTimeout(() => setScoreFlash(false), 300);
 
-          if (newScore > highScore) {
-            setHighScore(newScore);
-            setStoredHighScore(newScore);
-            setIsNewHighScore(true);
-          }
           
           return { ...pipe, x: newX, passed: true };
         }
@@ -163,6 +158,8 @@ export default function Game() {
         newBirdPosition < 0
       ) {
         setParticles(prev => [...prev, ...spawnExplosion(BIRD_X, newBirdPosition)]);
+        if (score > (leaderboard[0] ?? 0)) setIsNewHighScore(true);
+        setLeaderboard(addLeaderboardEntry(score));
         setGameOver(true);
         playGameOver();
       }
@@ -219,12 +216,11 @@ export default function Game() {
 
         <ScoreDisplay
           score={score}
-          highScore={highScore}
+          leaderboard={leaderboard}
           isNewHighScore={isNewHighScore}
           gameOver={gameOver}
           gameStarted={gameStarted}
           scoreFlash={scoreFlash}
-          onRestart={resetGame}
         />
       </div>
     </div>

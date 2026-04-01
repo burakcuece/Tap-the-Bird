@@ -6,7 +6,7 @@ export interface Pipe {
 
 export interface GameState {
   score: number;
-  highScore: number;
+  leaderboard: number[];
   isNewHighScore: boolean;
 }
 

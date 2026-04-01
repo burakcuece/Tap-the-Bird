@@ -1,12 +1,23 @@
-export const STORAGE_KEYS = {
-  HIGH_SCORE: 'tapthebird_highscore',
-} as const;
+const LEADERBOARD_KEY = 'tapthebird_leaderboard';
+const LEGACY_KEY = 'tapthebird_highscore';
+const MAX_ENTRIES = 5;
 
-export const getStoredHighScore = (): number => {
-  const stored = localStorage.getItem(STORAGE_KEYS.HIGH_SCORE);
-  return stored ? parseInt(stored, 10) : 0;
+export const getLeaderboard = (): number[] => {
+  try {
+    const stored = localStorage.getItem(LEADERBOARD_KEY);
+    if (stored) return JSON.parse(stored) as number[];
+    // Migrate legacy single high score
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    return legacy ? [parseInt(legacy, 10)] : [];
+  } catch {
+    return [];
+  }
 };
 
-export const setStoredHighScore = (score: number): void => {
-  localStorage.setItem(STORAGE_KEYS.HIGH_SCORE, score.toString());
+export const addLeaderboardEntry = (score: number): number[] => {
+  const updated = [...getLeaderboard(), score]
+    .sort((a, b) => b - a)
+    .slice(0, MAX_ENTRIES);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(updated));
+  return updated;
 };
