@@ -269,7 +269,7 @@ export default function Game() {
         onClick={handleClick}
         ref={gameRef}
       >
-        <Background scrollOffset={scrollOffset} />
+        <Background scrollOffset={scrollOffset} score={score} />
         <Bird position={birdPosition} velocity={birdVelocity} skin={activeSkin} opacity={birdOpacity} />
         <ParticleSystem particles={particles} />
         
