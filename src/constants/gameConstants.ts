@@ -6,6 +6,7 @@ export const GRAVITY = 0.25; // Reduced from 0.4 for gentler falling
 export const JUMP_FORCE = -6; // Adjusted for smoother jumps
 export const PIPE_SPEED = 2.5;
 export const MAX_VELOCITY = 8;
+export const GROUND_HEIGHT = 28;
 export const BIRD_X = 50;
 
 export const INITIAL_BIRD_POSITION = 250;

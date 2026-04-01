@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useInterval } from '../hooks/useInterval';
+import { Background } from './Background';
 import { Bird } from './Bird';
 import { Pipe as PipeComponent } from './Pipe';
 import { ScoreDisplay } from './ScoreDisplay';
@@ -19,6 +20,7 @@ import {
   INITIAL_BIRD_POSITION,
   INITIAL_BIRD_VELOCITY,
   MAX_VELOCITY,
+  GROUND_HEIGHT,
 } from '../constants/gameConstants';
 
 export default function Game() {
@@ -31,6 +33,7 @@ export default function Game() {
   const [gameOver, setGameOver] = useState(false);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [scoreFlash, setScoreFlash] = useState(false);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const gameRef = useRef<HTMLDivElement>(null);
 
   const generatePipe = (x: number): Pipe => ({
@@ -77,8 +80,11 @@ export default function Game() {
       setBirdVelocity(newBirdVelocity);
       setBirdPosition(newBirdPosition);
 
+      const currentSpeed = PIPE_SPEED + Math.floor(score / 5) * 0.3;
+      setScrollOffset(prev => prev + currentSpeed);
+
       const newPipes = pipes.map(pipe => {
-        const newX = pipe.x - PIPE_SPEED;
+        const newX = pipe.x - currentSpeed;
         
         if (!pipe.passed && newX + PIPE_WIDTH < BIRD_X) {
           const newScore = score + 1;
@@ -109,7 +115,7 @@ export default function Game() {
 
       if (
         checkCollision(newBirdPosition, newPipes) ||
-        newBirdPosition > 500 - BIRD_HEIGHT ||
+        newBirdPosition > 500 - GROUND_HEIGHT - BIRD_HEIGHT ||
         newBirdPosition < 0
       ) {
         setGameOver(true);
@@ -150,10 +156,11 @@ export default function Game() {
   return (
     <div className="flex items-center justify-center pt-8 pb-4">
       <div 
-        className="relative w-[400px] h-[500px] bg-blue-300 rounded-lg shadow-2xl overflow-hidden cursor-pointer" 
+        className="relative w-[400px] h-[500px] rounded-lg shadow-2xl overflow-hidden cursor-pointer"
         onClick={handleClick}
         ref={gameRef}
       >
+        <Background scrollOffset={scrollOffset} />
         <Bird position={birdPosition} velocity={birdVelocity} />
         
         {pipes.map((pipe, index) => (
