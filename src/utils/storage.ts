@@ -14,6 +14,12 @@ export const getLeaderboard = (): number[] => {
   }
 };
 
+export const getSelectedSkinId = (): string =>
+  localStorage.getItem('tapthebird_skin') ?? 'yellow';
+
+export const setSelectedSkinId = (id: string): void =>
+  localStorage.setItem('tapthebird_skin', id);
+
 export const addLeaderboardEntry = (score: number): number[] => {
   const updated = [...getLeaderboard(), score]
     .sort((a, b) => b - a)

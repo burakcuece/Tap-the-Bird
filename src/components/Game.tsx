@@ -7,7 +7,8 @@ import { ParticleSystem } from './ParticleSystem';
 import { Pipe as PipeComponent } from './Pipe';
 import { ScoreDisplay } from './ScoreDisplay';
 import { Particle, Pipe } from '../types/gameTypes';
-import { getLeaderboard, addLeaderboardEntry } from '../utils/storage';
+import { getLeaderboard, addLeaderboardEntry, getSelectedSkinId, setSelectedSkinId } from '../utils/storage';
+import { BIRD_SKINS } from '../constants/skinConstants';
 import {
   BIRD_HEIGHT,
   BIRD_WIDTH,
@@ -37,8 +38,18 @@ export default function Game() {
   const [scoreFlash, setScoreFlash] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [invincibleFrames, setInvincibleFrames] = useState(0);
+  const [selectedSkinId, setSelectedSkinIdState] = useState(getSelectedSkinId());
   const { playJump, playScore, playGameOver } = useGameSounds();
   const gameRef = useRef<HTMLDivElement>(null);
+
+  const activeSkin = BIRD_SKINS.find(s => s.id === selectedSkinId) ?? BIRD_SKINS[0];
+  const birdOpacity = invincibleFrames > 0 && Math.floor(invincibleFrames / 5) % 2 !== 0 ? 0.25 : 1;
+
+  const handleSelectSkin = (id: string) => {
+    setSelectedSkinId(id);
+    setSelectedSkinIdState(id);
+  };
   const birdPosRef = useRef(INITIAL_BIRD_POSITION);
   const particleIdRef = useRef(0);
 
@@ -152,6 +163,11 @@ export default function Game() {
           .filter(p => p.life > 0)
       );
 
+      if (invincibleFrames > 0) {
+        setInvincibleFrames(prev => prev - 1);
+        return;
+      }
+
       if (
         checkCollision(newBirdPosition, newPipes) ||
         newBirdPosition > 500 - GROUND_HEIGHT - BIRD_HEIGHT ||
@@ -176,6 +192,7 @@ export default function Game() {
     setScore(0);
     setIsNewHighScore(false);
     setParticles([]);
+    setInvincibleFrames(90);
   };
 
   const handleClick = () => {
@@ -207,7 +224,7 @@ export default function Game() {
         ref={gameRef}
       >
         <Background scrollOffset={scrollOffset} />
-        <Bird position={birdPosition} velocity={birdVelocity} />
+        <Bird position={birdPosition} velocity={birdVelocity} skin={activeSkin} opacity={birdOpacity} />
         <ParticleSystem particles={particles} />
         
         {pipes.map((pipe, index) => (
@@ -221,6 +238,8 @@ export default function Game() {
           gameOver={gameOver}
           gameStarted={gameStarted}
           scoreFlash={scoreFlash}
+          selectedSkinId={selectedSkinId}
+          onSelectSkin={handleSelectSkin}
         />
       </div>
     </div>

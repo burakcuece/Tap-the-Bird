@@ -1,10 +1,13 @@
 import React from 'react';
 import { GameState } from '../types/gameTypes';
+import { BIRD_SKINS } from '../constants/skinConstants';
 
 interface ScoreDisplayProps extends GameState {
   gameOver: boolean;
   gameStarted: boolean;
   scoreFlash: boolean;
+  selectedSkinId: string;
+  onSelectSkin: (id: string) => void;
 }
 
 const MEDALS = [
@@ -57,6 +60,8 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   gameOver,
   gameStarted,
   scoreFlash,
+  selectedSkinId,
+  onSelectSkin,
 }) => {
   const bestScore = leaderboard[0] ?? 0;
 
@@ -110,7 +115,42 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
               </>
             )}
 
-            <p className="text-white text-lg">
+            {!gameOver && (
+              <div className="mt-3 mb-2">
+                <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">
+                  Bird auswählen
+                </p>
+                <div className="flex gap-2 justify-center">
+                  {BIRD_SKINS.map(skin => {
+                    const unlocked = bestScore >= skin.unlock;
+                    const selected = selectedSkinId === skin.id;
+                    return (
+                      <div
+                        key={skin.id}
+                        className="flex flex-col items-center gap-0.5 cursor-pointer"
+                        onClick={e => { e.stopPropagation(); if (unlocked) onSelectSkin(skin.id); }}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full transition-transform"
+                          style={{
+                            backgroundColor: unlocked ? skin.body : '#6b7280',
+                            boxShadow: selected ? `0 0 0 2px white, 0 0 0 4px ${skin.body}` : undefined,
+                            transform: selected ? 'scale(1.2)' : 'scale(1)',
+                            filter: unlocked ? undefined : 'grayscale(1)',
+                            opacity: unlocked ? 1 : 0.5,
+                          }}
+                        />
+                        <span className="text-white opacity-60" style={{ fontSize: 8 }}>
+                          {unlocked ? skin.name : `${skin.unlock}+`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <p className="text-white text-lg mt-1">
               {gameOver ? 'Tap to play again' : 'Tap to start'}
             </p>
           </div>
