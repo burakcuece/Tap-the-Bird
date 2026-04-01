@@ -30,6 +30,7 @@ export default function Game() {
   const [highScore, setHighScore] = useState(getStoredHighScore());
   const [gameOver, setGameOver] = useState(false);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [scoreFlash, setScoreFlash] = useState(false);
   const gameRef = useRef<HTMLDivElement>(null);
 
   const generatePipe = (x: number): Pipe => ({
@@ -82,7 +83,9 @@ export default function Game() {
         if (!pipe.passed && newX + PIPE_WIDTH < BIRD_X) {
           const newScore = score + 1;
           setScore(newScore);
-          
+          setScoreFlash(true);
+          setTimeout(() => setScoreFlash(false), 300);
+
           if (newScore > highScore) {
             setHighScore(newScore);
             setStoredHighScore(newScore);
@@ -163,6 +166,7 @@ export default function Game() {
           isNewHighScore={isNewHighScore}
           gameOver={gameOver}
           gameStarted={gameStarted}
+          scoreFlash={scoreFlash}
           onRestart={resetGame}
         />
       </div>

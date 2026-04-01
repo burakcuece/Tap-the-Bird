@@ -4,6 +4,7 @@ import { GameState } from '../types/gameTypes';
 interface ScoreDisplayProps extends GameState {
   gameOver: boolean;
   gameStarted: boolean;
+  scoreFlash: boolean;
   onRestart: () => void;
 }
 
@@ -13,12 +14,16 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   isNewHighScore,
   gameOver,
   gameStarted,
+  scoreFlash,
   onRestart,
 }) => {
   return (
     <>
       <div className="absolute top-4 left-0 right-0 text-center">
-        <div className="text-4xl font-bold text-white shadow-text">{score}</div>
+        <div
+          className="text-4xl font-bold text-white shadow-text transition-transform duration-150"
+          style={{ transform: scoreFlash ? 'scale(1.4)' : 'scale(1)' }}
+        >{score}</div>
         <div className="text-sm text-white shadow-text">High Score: {highScore}</div>
       </div>
 

@@ -13,7 +13,7 @@ export const Bird: React.FC<BirdProps> = ({ position, velocity }) => {
       style={{
         top: position,
         left: BIRD_X,
-        transform: `rotate(${velocity * 4}deg)`,
+        transform: `rotate(${Math.min(Math.max(velocity * 4, -30), 90)}deg)`,
         width: BIRD_WIDTH,
         height: BIRD_HEIGHT,
       }}
