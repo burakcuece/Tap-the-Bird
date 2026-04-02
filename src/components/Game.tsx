@@ -7,6 +7,7 @@ import { ParticleSystem } from './ParticleSystem';
 import { Pipe as PipeComponent } from './Pipe';
 import { Coin } from './Coin';
 import { PowerUpItem } from './PowerUpItem';
+import { PauseMenu } from './PauseMenu';
 import { ScoreDisplay } from './ScoreDisplay';
 import { ActivePowerUp, Particle, Pipe, PopupText, PowerUpType } from '../types/gameTypes';
 import { QuestProgress } from '../types/questTypes';
@@ -56,6 +57,9 @@ export default function Game() {
   const [combo, setCombo] = useState(0);
   const [popups, setPopups] = useState<PopupText[]>([]);
   const [screenShake, setScreenShake] = useState(false);
+
+  // Pause
+  const [paused, setPaused] = useState(false);
 
   // Power-ups
   const [activePowerUp, setActivePowerUp] = useState<ActivePowerUp | null>(null);
@@ -357,7 +361,7 @@ export default function Game() {
         playGameOver();
       }
     },
-    gameStarted && !gameOver ? 16 : null
+    gameStarted && !gameOver && !paused ? 16 : null
   );
 
   const resetGame = () => {
@@ -390,6 +394,7 @@ export default function Game() {
   };
 
   const handleClick = () => {
+    if (paused) return; // clicks do nothing while paused
     if (!gameStarted || gameOver) {
       resetGame();
     } else {
@@ -489,6 +494,40 @@ export default function Game() {
           <div className="absolute top-16 left-0 right-0 text-center pointer-events-none">
             <span className="text-xl font-bold text-orange-400 animate-pulse shadow-text">Combo x{combo}</span>
           </div>
+        )}
+
+        {/* Pause button — only visible while playing */}
+        {gameStarted && !gameOver && (
+          <button
+            className="absolute top-3 left-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black bg-opacity-40 text-white text-xs font-bold pointer-events-auto"
+            onClick={e => { e.stopPropagation(); setPaused(p => !p); }}
+          >
+            {paused ? '▶' : '⏸'}
+          </button>
+        )}
+
+        {/* Pause overlay */}
+        {paused && (
+          <PauseMenu
+            onResume={() => setPaused(false)}
+            onMainMenu={() => {
+              setPaused(false);
+              setGameStarted(false);
+              setGameOver(false);
+              setBirdPosition(INITIAL_BIRD_POSITION);
+              setBirdVelocity(INITIAL_BIRD_VELOCITY);
+              setPipes([]);
+              setScore(0);
+              scoreRef.current = 0;
+              setParticles([]);
+              setActivePowerUp(null);
+              activePowerUpRef.current = null;
+            }}
+            selectedSkinId={selectedSkinId}
+            onSelectSkin={handleSelectSkin}
+            questProgress={questProgress}
+            onQuestsUpdate={setQuestProgress}
+          />
         )}
 
         <ScoreDisplay
