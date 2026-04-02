@@ -65,3 +65,45 @@ export const unlockSkin = (id: string): void => {
     localStorage.setItem(UNLOCKED_SKINS_KEY, JSON.stringify([...current, id]));
   }
 };
+
+// ── Quest persistence ────────────────────────────────────────────────────────
+import type { QuestId, QuestProgress } from '../types/questTypes';
+import { QUESTS } from '../types/questTypes';
+
+const QUEST_KEY = 'tapthebird_quests';
+
+export const getQuestProgress = (): QuestProgress[] => {
+  try {
+    const stored = localStorage.getItem(QUEST_KEY);
+    if (stored) return JSON.parse(stored) as QuestProgress[];
+  } catch { /* ignore */ }
+  return QUESTS.map(q => ({ id: q.id, progress: 0, completed: false, rewarded: false }));
+};
+
+const saveQuestProgress = (quests: QuestProgress[]): void => {
+  localStorage.setItem(QUEST_KEY, JSON.stringify(quests));
+};
+
+/** Increment progress for one quest. Returns updated list + coins to award (if newly rewarded). */
+export const incrementQuest = (id: QuestId, amount = 1): { quests: QuestProgress[]; coinsEarned: number } => {
+  const quest = QUESTS.find(q => q.id === id)!;
+  const quests = getQuestProgress().map(qp => {
+    if (qp.id !== id || qp.completed) return qp;
+    const newProgress = Math.min(qp.progress + amount, quest.goal);
+    return { ...qp, progress: newProgress, completed: newProgress >= quest.goal };
+  });
+  saveQuestProgress(quests);
+  return { quests, coinsEarned: 0 };
+};
+
+/** Claim reward for a completed, un-rewarded quest. Returns coins awarded. */
+export const claimQuestReward = (id: QuestId): number => {
+  const quest = QUESTS.find(q => q.id === id)!;
+  const quests = getQuestProgress().map(qp => {
+    if (qp.id === id && qp.completed && !qp.rewarded) return { ...qp, rewarded: true };
+    return qp;
+  });
+  saveQuestProgress(quests);
+  addCoins(quest.reward);
+  return quest.reward;
+};

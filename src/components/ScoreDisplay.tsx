@@ -3,6 +3,8 @@ import { GameState } from '../types/gameTypes';
 import { BIRD_SKINS } from '../constants/skinConstants';
 import { getUnlockedSkins, unlockSkin, getCoins, subtractCoins } from '../utils/storage';
 import { useGameSounds } from '../hooks/useGameSounds';
+import { QuestPanel } from './QuestPanel';
+import { QuestProgress } from '../types/questTypes';
 
 interface ScoreDisplayProps extends GameState {
   gameOver: boolean;
@@ -12,6 +14,8 @@ interface ScoreDisplayProps extends GameState {
   onSelectSkin: (id: string) => void;
   coinsGathered: number;
   combo: number;
+  questProgress: QuestProgress[];
+  onQuestsUpdate: (quests: QuestProgress[]) => void;
 }
 
 const MEDALS = [
@@ -26,12 +30,10 @@ const Medal: React.FC<{ score: number }> = ({ score }) => {
 
   return (
     <div className="flex flex-col items-center mb-3">
-      {/* Ribbon */}
       <div className="flex gap-0.5 mb-0.5">
         <div className="w-4 h-4" style={{ backgroundColor: medal.outer, clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
         <div className="w-4 h-4" style={{ backgroundColor: medal.inner, clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
       </div>
-      {/* Coin */}
       <div
         className="relative flex items-center justify-center rounded-full"
         style={{
@@ -40,15 +42,7 @@ const Medal: React.FC<{ score: number }> = ({ score }) => {
           boxShadow: `0 3px 8px rgba(0,0,0,0.5), inset 0 1px 2px ${medal.shine}`,
         }}
       >
-        {/* Inner ring */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 44, height: 44,
-            border: `2px solid ${medal.inner}`,
-            opacity: 0.6,
-          }}
-        />
+        <div className="absolute rounded-full" style={{ width: 44, height: 44, border: `2px solid ${medal.inner}`, opacity: 0.6 }} />
         <span className="text-xs font-black tracking-tight" style={{ color: medal.text, fontSize: 10 }}>
           {medal.label}
         </span>
@@ -67,9 +61,12 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   selectedSkinId,
   onSelectSkin,
   coinsGathered,
+  questProgress,
+  onQuestsUpdate,
 }) => {
   const [unlockedSkins, setUnlockedSkins] = useState<string[]>([]);
   const [totalCoins, setTotalCoins] = useState(0);
+  const [tab, setTab] = useState<'shop' | 'quests'>('shop');
   const { playBuy } = useGameSounds();
 
   useEffect(() => {
@@ -82,19 +79,22 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   const handleSkinClick = (skinId: string, price: number) => {
     if (unlockedSkins.includes(skinId)) {
       onSelectSkin(skinId);
-    } else {
-      if (subtractCoins(price)) {
-        unlockSkin(skinId);
-        setUnlockedSkins(getUnlockedSkins());
-        setTotalCoins(getCoins());
-        onSelectSkin(skinId);
-        playBuy();
-      }
+    } else if (subtractCoins(price)) {
+      unlockSkin(skinId);
+      setUnlockedSkins(getUnlockedSkins());
+      setTotalCoins(getCoins());
+      onSelectSkin(skinId);
+      playBuy();
     }
+  };
+
+  const handleCoinsEarned = (amount: number) => {
+    setTotalCoins(prev => prev + amount);
   };
 
   return (
     <>
+      {/* ── Live HUD ────────────────────────────────────────────────────── */}
       <div className="absolute top-4 left-0 right-0 px-4 flex justify-between items-start pointer-events-none">
         <div className="text-center w-full absolute left-0 right-0 top-0">
           <div
@@ -108,13 +108,15 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
         </div>
       </div>
 
+      {/* ── Overlay (start / game-over screens) ─────────────────────────── */}
       {(!gameStarted || gameOver) && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="text-center">
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto">
+          <div className="text-center w-full py-3">
             <h1 className="text-4xl font-bold text-white mb-2">
               {gameOver ? (isNewHighScore ? 'New High Score!' : 'Game Over!') : 'Tap the Bird'}
             </h1>
 
+            {/* ── Game-over summary ──────────────────────────────────────── */}
             {gameOver && (
               <>
                 <Medal score={score} />
@@ -131,9 +133,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
 
                 {leaderboard.length > 0 && (
                   <div className="mx-auto mb-3 w-36">
-                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-1">
-                      Top Scores
-                    </p>
+                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-1">Top Scores</p>
                     <div className="bg-black bg-opacity-40 rounded-lg overflow-hidden">
                       {leaderboard.map((s, i) => {
                         const isCurrentRun = gameOver && s === score && i === leaderboard.indexOf(score);
@@ -141,9 +141,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
                           <div
                             key={i}
                             className={`flex justify-between px-3 py-0.5 text-sm ${
-                              isCurrentRun
-                                ? 'bg-yellow-400 bg-opacity-30 text-yellow-200 font-bold'
-                                : 'text-white'
+                              isCurrentRun ? 'bg-yellow-400 bg-opacity-30 text-yellow-200 font-bold' : 'text-white'
                             }`}
                           >
                             <span className="opacity-60">#{i + 1}</span>
@@ -157,49 +155,87 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
               </>
             )}
 
+            {/* ── Start screen: tab switcher ─────────────────────────────── */}
             {!gameOver && (
-              <div className="mt-3 mb-2">
-                <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">
-                  Skin Shop
-                </p>
-                <div className="flex gap-3 justify-center px-4 overflow-x-auto">
-                  {BIRD_SKINS.map(skin => {
-                    const unlocked = unlockedSkins.includes(skin.id);
-                    const selected = selectedSkinId === skin.id;
-                    const canAfford = totalCoins >= skin.price;
-                    
-                    return (
-                      <div
-                        key={skin.id}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors z-10 cursor-pointer ${
-                          selected ? 'bg-white bg-opacity-20' : 'bg-black bg-opacity-40 hover:bg-opacity-60'
-                        }`}
-                        onClick={e => { e.stopPropagation(); handleSkinClick(skin.id, skin.price); }}
-                      >
-                        <div
-                          className="w-10 h-10 rounded-full transition-transform mx-auto"
-                          style={{
-                            backgroundColor: skin.body,
-                            boxShadow: selected ? `0 0 0 2px white, 0 0 0 4px ${skin.body}` : undefined,
-                            transform: selected ? 'scale(1.1)' : 'scale(1)',
-                            filter: !unlocked ? 'brightness(0.4)' : undefined,
-                          }}
-                        />
-                        <div className="text-center mt-1">
-                          <p className="text-white text-xs font-bold w-16 truncate">{skin.name}</p>
-                          {unlocked ? (
-                            <p className="text-[10px] text-green-400">Unlocked</p>
-                          ) : (
-                            <p className={`text-[10px] font-bold flex items-center justify-center gap-1 ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>
-                              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
-                              {skin.price}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="mt-2 mb-2 w-full">
+                {/* Tab bar */}
+                <div className="flex justify-center gap-2 mb-3 pointer-events-auto">
+                  <button
+                    className={`px-4 py-1 rounded-full text-xs font-bold transition-colors ${
+                      tab === 'shop' ? 'bg-yellow-400 text-black' : 'bg-white bg-opacity-20 text-white'
+                    }`}
+                    onClick={e => { e.stopPropagation(); setTab('shop'); }}
+                  >
+                    🛒 Shop
+                  </button>
+                  <button
+                    className={`px-4 py-1 rounded-full text-xs font-bold transition-colors relative ${
+                      tab === 'quests' ? 'bg-yellow-400 text-black' : 'bg-white bg-opacity-20 text-white'
+                    }`}
+                    onClick={e => { e.stopPropagation(); setTab('quests'); }}
+                  >
+                    📋 Missionen
+                    {/* Badge if any quest claimable */}
+                    {questProgress.some(q => q.completed && !q.rewarded) && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+                    )}
+                  </button>
                 </div>
+
+                {/* Shop tab */}
+                {tab === 'shop' && (
+                  <>
+                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">Skin Shop</p>
+                    <div className="flex gap-3 justify-center px-4 overflow-x-auto pointer-events-auto">
+                      {BIRD_SKINS.map(skin => {
+                        const unlocked = unlockedSkins.includes(skin.id);
+                        const selected = selectedSkinId === skin.id;
+                        const canAfford = totalCoins >= skin.price;
+                        return (
+                          <div
+                            key={skin.id}
+                            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors z-10 cursor-pointer ${
+                              selected ? 'bg-white bg-opacity-20' : 'bg-black bg-opacity-40 hover:bg-opacity-60'
+                            }`}
+                            onClick={e => { e.stopPropagation(); handleSkinClick(skin.id, skin.price); }}
+                          >
+                            <div
+                              className="w-10 h-10 rounded-full transition-transform mx-auto"
+                              style={{
+                                backgroundColor: skin.body,
+                                boxShadow: selected ? `0 0 0 2px white, 0 0 0 4px ${skin.body}` : undefined,
+                                transform: selected ? 'scale(1.1)' : 'scale(1)',
+                                filter: !unlocked ? 'brightness(0.4)' : undefined,
+                              }}
+                            />
+                            <div className="text-center mt-1">
+                              <p className="text-white text-xs font-bold w-16 truncate">{skin.name}</p>
+                              {unlocked ? (
+                                <p className="text-[10px] text-green-400">Unlocked</p>
+                              ) : (
+                                <p className={`text-[10px] font-bold flex items-center justify-center gap-1 ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>
+                                  <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+                                  {skin.price}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Quests tab */}
+                {tab === 'quests' && (
+                  <div className="pointer-events-auto">
+                    <QuestPanel
+                      quests={questProgress}
+                      onQuestsUpdate={onQuestsUpdate}
+                      onCoinsEarned={handleCoinsEarned}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,8 +1,16 @@
+export type PowerUpType = 'magnet' | 'shield' | 'shrink';
+
 export interface Pipe {
   x: number;
   height: number;
   passed: boolean;
-  hasCoin: boolean;      // NEW: A pipe might have a coin centered in its gap
+  hasCoin: boolean;
+  powerUp?: PowerUpType;  // optional power-up instead of coin
+}
+
+export interface ActivePowerUp {
+  type: PowerUpType;
+  framesLeft: number; // in game-loop ticks
 }
 
 export interface GameState {
